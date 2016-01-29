@@ -16,23 +16,24 @@ $urls = array(
 	'http://item.jd.com/1385518.html',
 );
 
-$response = rolling_curl($urls,5000);
+$options = array(
+	CURL_RETURNTRANSFER => 1,
+);
+$response = rolling_curl($urls, $options);
 echo '<pre>';print_r($response);exit;
 
 /**
  * 不再像classic_curl那样等待所有请求完成之后再进行后面的处理
  * 而是边请求边返回边处理
  */
-function rolling_curl($urls, $delay){
+function rolling_curl($urls, $options){
 	$queue = curl_multi_init();
 	$map = array();
 
 	foreach($urls as $url){
-
 		$ch = curl_init();
 		curl_setopt($ch, CURLOPT_URL, $url);
-		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 0);
-
+		curl_setopt_array($ch, $options); 
 		curl_multi_add_handle($queue, $ch);
 		$map[$ch] = $url;
 	}
@@ -46,7 +47,6 @@ function rolling_curl($urls, $delay){
 
 		// a request was just completed -- find out which one
 		while($done = curl_multi_info_read($queue)){
-			print_r($done);exit;
 			$info = curl_getinfo($done['handle']);
 			$error = curl_error($done['handle']);
 			$data= curl_multi_getcontent($done['handle']);
